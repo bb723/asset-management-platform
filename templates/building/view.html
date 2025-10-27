@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}{{ building.name }} - Asset Management Platform{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('home') }}">Entities</a></li>
+                {% if entity %}
+                <li class="breadcrumb-item"><a href="{{ url_for('view_entity', entity_id=entity.entity_id) }}">{{ entity.name }}</a></li>
+                {% endif %}
+                <li class="breadcrumb-item active">{{ building.name }}</li>
+            </ol>
+        </nav>
+        <h1><i class="bi bi-house"></i> {{ building.name }}</h1>
+        {% if building.address %}
+        <p class="text-muted"><i class="bi bi-geo-alt"></i> {{ building.address }}</p>
+        {% endif %}
+    </div>
+    <div class="col-auto">
+        <a href="{{ url_for('edit_building', building_id=building.building_id) }}" class="btn btn-secondary">
+            <i class="bi bi-pencil"></i> Edit
+        </a>
+    </div>
+</div>
+
+<!-- Tabs -->
+<ul class="nav nav-tabs mb-4" role="tablist">
+    <li class="nav-item" role="presentation">
+        <a class="nav-link {% if active_tab == 'budget' %}active{% endif %}"
+           href="{{ url_for('view_building', building_id=building.building_id, tab='budget') }}">
+            <i class="bi bi-currency-dollar"></i> Budget
+        </a>
+    </li>
+    <li class="nav-item" role="presentation">
+        <a class="nav-link {% if active_tab == 'documents' %}active{% endif %}"
+           href="{{ url_for('view_documents', building_id=building.building_id) }}">
+            <i class="bi bi-file-earmark"></i> Documents
+        </a>
+    </li>
+</ul>
+
+<!-- Tab Content -->
+<div class="tab-content">
+    {% if active_tab == 'budget' %}
+    <div class="tab-pane fade show active">
+        <div class="card">
+            <div class="card-body">
+                <h5>24-Month Budget</h5>
+                <p class="text-muted">Manage the budget for this building</p>
+                <a href="{{ url_for('view_budget', building_id=building.building_id) }}" class="btn btn-primary">
+                    <i class="bi bi-currency-dollar"></i> Manage Budget
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<div class="mt-4">
+    {% if entity %}
+    <a href="{{ url_for('view_entity', entity_id=entity.entity_id) }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to {{ entity.name }}
+    </a>
+    {% else %}
+    <a href="{{ url_for('home') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Entities
+    </a>
+    {% endif %}
+</div>
+{% endblock %}

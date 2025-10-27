@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Budget - {{ building.name }} - Asset Management Platform{% endblock %}
+
+{% block extra_css %}
+<style>
+    .budget-table {
+        font-size: 0.9rem;
+    }
+    .budget-table th {
+        position: sticky;
+        top: 0;
+        background: #fff;
+        z-index: 10;
+    }
+    .budget-table .category-header {
+        position: sticky;
+        left: 0;
+        background: #f8f9fa;
+        font-weight: bold;
+        min-width: 150px;
+    }
+    .budget-table input {
+        width: 100px;
+        font-size: 0.85rem;
+    }
+    .table-container {
+        overflow-x: auto;
+        max-height: 600px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1><i class="bi bi-currency-dollar"></i> 24-Month Budget</h1>
+        <p class="text-muted">{{ building.name }}</p>
+    </div>
+    <div class="col-auto">
+        <button id="saveBudget" class="btn btn-primary">
+            <i class="bi bi-save"></i> Save Budget
+        </button>
+        <a href="{{ url_for('view_building', building_id=building.building_id) }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back
+        </a>
+    </div>
+</div>
+
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i> Edit budget values directly in the table. Click "Save Budget" when finished.
+</div>
+
+<div class="card shadow">
+    <div class="card-body">
+        <div class="table-container">
+            <table class="table table-bordered table-hover budget-table" id="budgetTable">
+                <thead>
+                    <tr>
+                        <th class="category-header">Category</th>
+                        {% for month in months %}
+                        <th class="text-end">{{ month|month_name }}</th>
+                        {% endfor %}
+                        <th class="text-end bg-light">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for category in categories %}
+                    <tr data-category="{{ category }}">
+                        <td class="category-header">{{ category }}</td>
+                        {% for month in months %}
+                        <td class="text-end">
+                            <input type="number"
+                                   class="form-control form-control-sm text-end budget-input"
+                                   data-category="{{ category }}"
+                                   data-month="{{ month.strftime('%Y-%m-%d') }}"
+                                   value="{{ budget_by_category.get(category, {}).get(month, 0)|float }}"
+                                   step="0.01">
+                        </td>
+                        {% endfor %}
+                        <td class="text-end bg-light">
+                            <strong class="category-total">$0.00</strong>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    <tr class="table-secondary">
+                        <td class="category-header"><strong>Monthly Total</strong></td>
+                        {% for month in months %}
+                        <td class="text-end">
+                            <strong class="month-total" data-month="{{ month.strftime('%Y-%m-%d') }}">$0.00</strong>
+                        </td>
+                        {% endfor %}
+                        <td class="text-end bg-light">
+                            <strong id="grandTotal">$0.00</strong>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="mt-3">
+    <button id="saveBudgetBottom" class="btn btn-primary">
+        <i class="bi bi-save"></i> Save Budget
+    </button>
+    <a href="{{ url_for('view_building', building_id=building.building_id) }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Building
+    </a>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/budget.js') }}"></script>
+<script>
+    const buildingId = "{{ building.building_id }}";
+    const saveUrl = "{{ url_for('save_budget', building_id=building.building_id) }}";
+
+    $(document).ready(function() {
+        initBudget(buildingId, saveUrl);
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ entity.name }} - Shared Budget View</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 0;
+        }
+        .main-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+        .header-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px 15px 0 0;
+            padding: 40px;
+        }
+        .budget-table {
+            font-size: 0.9rem;
+        }
+        .budget-table th {
+            background: #f8f9fa;
+            position: sticky;
+            top: 0;
+        }
+        .budget-table .category-header {
+            position: sticky;
+            left: 0;
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+        .table-container {
+            overflow-x: auto;
+            max-height: 600px;
+        }
+        .building-card {
+            transition: transform 0.2s;
+        }
+        .building-card:hover {
+            transform: translateY(-5px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="main-card">
+            <!-- Header -->
+            <div class="header-section">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <h1 class="mb-0"><i class="bi bi-building"></i> {{ entity.name }}</h1>
+                        {% if entity.description %}
+                        <p class="mb-0 mt-2 opacity-75">{{ entity.description }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="col-auto">
+                        <span class="badge bg-light text-dark">
+                            <i class="bi bi-share"></i> Shared View
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="p-4">
+                <!-- Buildings Section -->
+                <section class="mb-5">
+                    <h3 class="mb-3"><i class="bi bi-houses"></i> Buildings ({{ buildings|length }})</h3>
+                    {% if buildings %}
+                    <div class="row">
+                        {% for building in buildings %}
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="card building-card shadow-sm h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ building.name }}</h5>
+                                    {% if building.address %}
+                                    <p class="card-text text-muted small">
+                                        <i class="bi bi-geo-alt"></i> {{ building.address }}
+                                    </p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> No buildings in this entity yet.
+                    </div>
+                    {% endif %}
+                </section>
+
+                <!-- Budget Section -->
+                <section>
+                    <h3 class="mb-3"><i class="bi bi-currency-dollar"></i> Aggregate Budget</h3>
+
+                    {% if budget_by_month %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> This budget shows the combined totals from all buildings in this entity.
+                    </div>
+
+                    <div class="table-container">
+                        <table class="table table-bordered budget-table">
+                            <thead>
+                                <tr>
+                                    <th class="category-header">Category</th>
+                                    {% for month in months %}
+                                    <th class="text-end">{{ month.strftime('%b %Y') if month else '' }}</th>
+                                    {% endfor %}
+                                    <th class="text-end bg-light">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for category in categories %}
+                                <tr>
+                                    <td class="category-header">{{ category }}</td>
+                                    {% set category_total = namespace(value=0) %}
+                                    {% for month in months %}
+                                    {% set amount = budget_by_month.get(month, {}).get(category, 0) %}
+                                    {% set category_total.value = category_total.value + amount %}
+                                    <td class="text-end">${{ "{:,.2f}".format(amount) }}</td>
+                                    {% endfor %}
+                                    <td class="text-end bg-light">
+                                        <strong>${{ "{:,.2f}".format(category_total.value) }}</strong>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                <tr class="table-secondary">
+                                    <td class="category-header"><strong>Monthly Total</strong></td>
+                                    {% set grand_total = namespace(value=0) %}
+                                    {% for month in months %}
+                                    {% set month_total = namespace(value=0) %}
+                                    {% for category in categories %}
+                                    {% set amount = budget_by_month.get(month, {}).get(category, 0) %}
+                                    {% set month_total.value = month_total.value + amount %}
+                                    {% endfor %}
+                                    {% set grand_total.value = grand_total.value + month_total.value %}
+                                    <td class="text-end">
+                                        <strong>${{ "{:,.2f}".format(month_total.value) }}</strong>
+                                    </td>
+                                    {% endfor %}
+                                    <td class="text-end bg-light">
+                                        <strong>${{ "{:,.2f}".format(grand_total.value) }}</strong>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i> No budget data available yet.
+                    </div>
+                    {% endif %}
+                </section>
+            </div>
+
+            <!-- Footer -->
+            <div class="text-center py-3 border-top">
+                <small class="text-muted">
+                    <i class="bi bi-shield-check"></i> Powered by Asset Management Platform
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

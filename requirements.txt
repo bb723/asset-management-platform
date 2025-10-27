@@ -1,0 +1,18 @@
+# Foundation package (provides auth, Snowflake client, etc.)
+git+https://github.com/bb723/foundation.git@v0.1.0
+
+# Web Framework
+Flask>=3.0.0
+Flask-WTF>=1.2.1
+
+# Microsoft Authentication
+msal>=1.24.0
+
+# For Heroku
+gunicorn>=23.0.0
+
+# Utilities
+python-dotenv>=1.0.0
+
+# Excel export support
+openpyxl>=3.1.2

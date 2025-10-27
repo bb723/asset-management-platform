@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Document - Asset Management Platform{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="bi bi-upload"></i> Upload Document</h4>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Building: <strong>{{ building.name }}</strong></p>
+
+                <form method="POST" action="{{ url_for('upload_document', building_id=building.building_id) }}"
+                      enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="category" class="form-label">Category <span class="text-danger">*</span></label>
+                        <select class="form-select" id="category" name="category" required>
+                            <option value="">Select a category...</option>
+                            {% for cat in categories %}
+                            <option value="{{ cat }}">{{ cat }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="file" class="form-label">File <span class="text-danger">*</span></label>
+                        <input type="file" class="form-control" id="file" name="file" required>
+                        <div class="form-text">
+                            Allowed file types: PDF, DOC, DOCX, XLS, XLSX, TXT, PNG, JPG, JPEG<br>
+                            Maximum file size: 16MB
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('view_documents', building_id=building.building_id) }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-upload"></i> Upload Document
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
