@@ -70,8 +70,16 @@ def create_entity(name: str, description: str = None) -> str:
         else:
             query = f"INSERT INTO entities (entity_id, name, description) VALUES ('{entity_id}', '{name_escaped}', NULL)"
 
-        snowflake.execute_query(query)
-        logger.info(f"Created entity: {name} (ID: {entity_id})")
+        logger.info(f"Executing INSERT query for entity: {name}")
+        result = snowflake.execute_query(query)
+        logger.info(f"INSERT completed. Result type: {type(result)}")
+
+        # Verify the insert
+        verify_query = f"SELECT COUNT(*) as cnt FROM entities WHERE entity_id = '{entity_id}'"
+        verify = snowflake.execute_query(verify_query)
+        logger.info(f"Verification query result: {verify}")
+
+        logger.info(f"✓ Created entity: {name} (ID: {entity_id})")
         return entity_id
     except Exception as e:
         logger.error(f"Failed to create entity {name}: {e}", exc_info=True)
