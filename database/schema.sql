@@ -71,11 +71,7 @@ CREATE TABLE IF NOT EXISTS share_tokens (
 );
 
 -- ============================================================================
--- Indexes for Performance
+-- Note: Indexes are not needed for Snowflake
+-- Snowflake automatically optimizes query performance using micro-partitions
+-- and clustering. Traditional indexes are only supported on hybrid tables.
 -- ============================================================================
-CREATE INDEX IF NOT EXISTS idx_buildings_entity ON buildings(entity_id);
-CREATE INDEX IF NOT EXISTS idx_budget_items_building ON budget_items(building_id);
-CREATE INDEX IF NOT EXISTS idx_budget_items_month ON budget_items(month_year);
-CREATE INDEX IF NOT EXISTS idx_documents_building ON documents(building_id);
-CREATE INDEX IF NOT EXISTS idx_share_tokens_entity ON share_tokens(entity_id);
-CREATE INDEX IF NOT EXISTS idx_share_tokens_expires ON share_tokens(expires_at);
