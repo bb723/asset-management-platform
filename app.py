@@ -192,16 +192,42 @@ def create_entity():
         description = request.form.get('description', '').strip()
 
         if not name:
+            # Check if this is an AJAX request
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({
+                    'success': False,
+                    'error': 'Entity name is required'
+                }), 400
             flash('Entity name is required', 'error')
             return render_template('entity/create.html')
 
         try:
             entity_id = queries.create_entity(name, description)
             logger.info(f"Entity created: {name} (ID: {entity_id})")
+
+            # Check if this is an AJAX request
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({
+                    'success': True,
+                    'entity': {
+                        'entity_id': entity_id,
+                        'name': name,
+                        'description': description
+                    }
+                })
+
             flash(f'Successfully created entity: {name}', 'success')
             return redirect(url_for('view_entity', entity_id=entity_id))
         except Exception as e:
             logger.error(f"Failed to create entity: {e}", exc_info=True)
+
+            # Check if this is an AJAX request
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({
+                    'success': False,
+                    'error': 'Failed to create entity'
+                }), 500
+
             flash('Failed to create entity', 'error')
 
     return render_template('entity/create.html')

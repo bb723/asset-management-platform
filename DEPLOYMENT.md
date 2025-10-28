@@ -2,6 +2,31 @@
 
 Complete guide for deploying the Asset Management Platform to Heroku (staging and production environments).
 
+## Quick Reference
+
+**Heroku Pipeline**: `foundation-asset-management`
+**GitHub Repository**: `bb723/asset-management-platform`
+**Staging App**: `asset-mgmt-staging` (auto-deploys from GitHub main branch)
+**Production App**: `asset-mgmt-production` (promote from staging)
+
+### Quick Deploy Commands
+
+```bash
+# 1. Push to GitHub (triggers automatic staging deployment)
+git push origin main
+
+# 2. Monitor staging
+heroku logs --tail --app asset-mgmt-staging
+heroku open --app asset-mgmt-staging
+
+# 3. Promote to production (after testing staging)
+heroku pipelines:promote --app asset-mgmt-staging
+
+# 4. Monitor production
+heroku logs --tail --app asset-mgmt-production
+heroku open --app asset-mgmt-production
+```
+
 ## Table of Contents
 1. [Prerequisites](#prerequisites)
 2. [Git Setup](#git-setup)
@@ -70,7 +95,19 @@ Verify: Visit https://github.com/bb723/asset-management-platform to confirm file
 
 ## Heroku Application Creation
 
-### Step 1: Create Staging Application
+**Current Setup**: The pipeline `foundation-asset-management` is already configured with:
+- Staging app: `asset-mgmt-staging` (connected to GitHub `bb723/asset-management-platform` main branch)
+- Production app: `asset-mgmt-production`
+
+### Pipeline Configuration (Already Complete)
+
+The Heroku Pipeline is configured to:
+1. **Automatically deploy** to staging when code is pushed to GitHub main branch
+2. **Manual promotion** from staging to production after testing
+
+View pipeline: https://dashboard.heroku.com/pipelines/foundation-asset-management
+
+### Step 1: Create Staging Application (COMPLETED)
 
 ```bash
 # Create staging app
@@ -81,7 +118,7 @@ heroku create asset-mgmt-staging --team standard-management
 # https://asset-mgmt-staging.herokuapp.com/ | https://git.heroku.com/asset-mgmt-staging.git
 ```
 
-### Step 2: Create Production Application
+### Step 2: Create Production Application (COMPLETED)
 
 ```bash
 # Create production app
@@ -92,14 +129,35 @@ heroku create asset-mgmt-production --team standard-management
 # https://asset-mgmt-production.herokuapp.com/ | https://git.heroku.com/asset-mgmt-production.git
 ```
 
-### Step 3: Configure Git Remotes
+### Step 3: Create Pipeline and Connect to GitHub (COMPLETED)
 
 ```bash
-# Add staging remote
+# Create pipeline
+heroku pipelines:create foundation-asset-management --team standard-management
+
+# Add apps to pipeline
+heroku pipelines:add foundation-asset-management --app asset-mgmt-staging --stage staging
+heroku pipelines:add foundation-asset-management --app asset-mgmt-production --stage production
+
+# Connect staging to GitHub (auto-deploy enabled)
+# This is done via the Heroku Dashboard:
+# 1. Go to pipeline page
+# 2. Click on staging app
+# 3. Deploy tab > Connect to GitHub
+# 4. Select repository: bb723/asset-management-platform
+# 5. Enable automatic deploys from main branch
+```
+
+### Step 4: Configure Git Remotes (Optional)
+
+Git remotes are optional since deployment happens via GitHub:
+
+```bash
+# Add staging remote (optional)
 heroku git:remote -a asset-mgmt-staging
 git remote rename heroku staging
 
-# Add production remote
+# Add production remote (optional)
 heroku git:remote -a asset-mgmt-production
 git remote rename heroku production
 
@@ -140,18 +198,18 @@ heroku config:set FLASK_ENV=staging --remote staging
 heroku config:set REDIRECT_URI=https://asset-mgmt-staging.herokuapp.com/auth/callback --remote staging
 
 # Snowflake Configuration (same for staging and production)
-heroku config:set SNOWFLAKE_USER=your-snowflake-username --remote staging
-heroku config:set SNOWFLAKE_PASSWORD="your-snowflake-password" --remote staging
-heroku config:set SNOWFLAKE_ACCOUNT=your-snowflake-account --remote staging
-heroku config:set SNOWFLAKE_WAREHOUSE=your-warehouse-name --remote staging
-heroku config:set SNOWFLAKE_DATABASE=your-database-name --remote staging
-heroku config:set SNOWFLAKE_ROLE=your-role-name --remote staging
+heroku config:set SNOWFLAKE_USER=<your-snowflake-user> --remote staging
+heroku config:set SNOWFLAKE_PASSWORD="<your-snowflake-password>" --remote staging
+heroku config:set SNOWFLAKE_ACCOUNT=<your-snowflake-account> --remote staging
+heroku config:set SNOWFLAKE_WAREHOUSE=<your-warehouse> --remote staging
+heroku config:set SNOWFLAKE_DATABASE=<your-database> --remote staging
+heroku config:set SNOWFLAKE_ROLE=<your-role> --remote staging
 heroku config:set SNOWFLAKE_SCHEMA=PUBLIC --remote staging
 
 # Microsoft OAuth (same for staging and production)
-heroku config:set MS_CLIENT_ID=your-azure-client-id --remote staging
-heroku config:set MS_CLIENT_SECRET=your-azure-client-secret --remote staging
-heroku config:set MS_TENANT_ID=your-azure-tenant-id --remote staging
+heroku config:set MS_CLIENT_ID=<your-client-id> --remote staging
+heroku config:set MS_CLIENT_SECRET=<your-client-secret> --remote staging
+heroku config:set MS_TENANT_ID=<your-tenant-id> --remote staging
 
 # File Storage
 heroku config:set UPLOAD_FOLDER=./uploads --remote staging
@@ -167,18 +225,18 @@ heroku config:set FLASK_ENV=production --remote production
 heroku config:set REDIRECT_URI=https://asset-mgmt-production.herokuapp.com/auth/callback --remote production
 
 # Snowflake Configuration (same as staging)
-heroku config:set SNOWFLAKE_USER=your-snowflake-username --remote production
-heroku config:set SNOWFLAKE_PASSWORD="your-snowflake-password" --remote production
-heroku config:set SNOWFLAKE_ACCOUNT=your-snowflake-account --remote production
-heroku config:set SNOWFLAKE_WAREHOUSE=your-warehouse-name --remote production
-heroku config:set SNOWFLAKE_DATABASE=your-database-name --remote production
-heroku config:set SNOWFLAKE_ROLE=your-role-name --remote production
+heroku config:set SNOWFLAKE_USER=<your-snowflake-user> --remote production
+heroku config:set SNOWFLAKE_PASSWORD="<your-snowflake-password>" --remote production
+heroku config:set SNOWFLAKE_ACCOUNT=<your-snowflake-account> --remote production
+heroku config:set SNOWFLAKE_WAREHOUSE=<your-warehouse> --remote production
+heroku config:set SNOWFLAKE_DATABASE=<your-database> --remote production
+heroku config:set SNOWFLAKE_ROLE=<your-role> --remote production
 heroku config:set SNOWFLAKE_SCHEMA=PUBLIC --remote production
 
 # Microsoft OAuth (same as staging)
-heroku config:set MS_CLIENT_ID=your-azure-client-id --remote production
-heroku config:set MS_CLIENT_SECRET=your-azure-client-secret --remote production
-heroku config:set MS_TENANT_ID=your-azure-tenant-id --remote production
+heroku config:set MS_CLIENT_ID=<your-client-id> --remote production
+heroku config:set MS_CLIENT_SECRET=<your-client-secret> --remote production
+heroku config:set MS_TENANT_ID=<your-tenant-id> --remote production
 
 # File Storage
 heroku config:set UPLOAD_FOLDER=./uploads --remote production
@@ -198,16 +256,16 @@ heroku config:set MAX_CONTENT_LENGTH=16777216 --remote production
 | FLASK_SECRET_KEY | (generated unique key) |
 | FLASK_ENV | staging |
 | REDIRECT_URI | https://asset-mgmt-staging.herokuapp.com/auth/callback |
-| SNOWFLAKE_USER | your-snowflake-username |
-| SNOWFLAKE_PASSWORD | your-snowflake-password |
-| SNOWFLAKE_ACCOUNT | your-snowflake-account |
-| SNOWFLAKE_WAREHOUSE | your-warehouse-name |
-| SNOWFLAKE_DATABASE | your-database-name |
-| SNOWFLAKE_ROLE | your-role-name |
+| SNOWFLAKE_USER | (your Snowflake username) |
+| SNOWFLAKE_PASSWORD | (your Snowflake password) |
+| SNOWFLAKE_ACCOUNT | (your Snowflake account) |
+| SNOWFLAKE_WAREHOUSE | (your warehouse name) |
+| SNOWFLAKE_DATABASE | (your database name) |
+| SNOWFLAKE_ROLE | (your role name) |
 | SNOWFLAKE_SCHEMA | PUBLIC |
-| MS_CLIENT_ID | your-azure-client-id |
-| MS_CLIENT_SECRET | your-azure-client-secret |
-| MS_TENANT_ID | your-azure-tenant-id |
+| MS_CLIENT_ID | (your Azure app client ID) |
+| MS_CLIENT_SECRET | (your Azure app client secret) |
+| MS_TENANT_ID | (your Azure tenant ID) |
 | UPLOAD_FOLDER | ./uploads |
 | MAX_CONTENT_LENGTH | 16777216 |
 
@@ -292,7 +350,7 @@ Option B: Via Snowflake Web UI
 
 1. Go to https://portal.azure.com
 2. Navigate to "Azure Active Directory" > "App registrations"
-3. Find app with Client ID: `your-azure-client-id`
+3. Find your registered app
 4. Click "Authentication" in left menu
 5. Under "Redirect URIs", click "Add URI"
 6. Add both staging and production URIs:
@@ -302,8 +360,8 @@ Option B: Via Snowflake Web UI
 
 ### Verify Configuration
 
-1. Client ID: `your-azure-client-id`
-2. Tenant ID: `your-azure-tenant-id`
+1. Client ID: Configured in Heroku config vars
+2. Tenant ID: Configured in Heroku config vars
 3. Client Secret: Active and not expired
 4. Redirect URIs: Include both staging and production URLs
 5. API Permissions: `User.Read` granted
@@ -447,32 +505,71 @@ heroku logs --tail --remote production | grep WARNING
 
 ### Standard Deployment Workflow
 
+**IMPORTANT**: The application uses a Heroku Pipeline with automatic deployment from GitHub. Changes are deployed as follows:
+
 1. **Make changes locally**
    ```bash
    # Make code changes
    # Test locally: python app.py
    ```
 
-2. **Commit changes**
+2. **Commit and push to GitHub**
    ```bash
    git add .
    git commit -m "Description of changes"
    git push origin main
    ```
 
-3. **Deploy to staging**
+3. **Automatic deployment to staging**
+   - Heroku Pipeline: `foundation-asset-management`
+   - Staging app: `asset-mgmt-staging`
+   - **Automatically deploys when you push to GitHub main branch**
+   - GitHub repo: `bb723/asset-management-platform`
+
    ```bash
-   git push staging main
-   heroku open --remote staging
-   # Test thoroughly
+   # Monitor staging deployment
+   heroku logs --tail --app asset-mgmt-staging
+
+   # Open staging to test
+   heroku open --app asset-mgmt-staging
    ```
 
-4. **Deploy to production**
+   **Test thoroughly in staging before promoting!**
+
+4. **Promote to production**
+   - Production app: `asset-mgmt-production`
+   - **Promote from staging using Heroku Pipeline** (recommended)
+
    ```bash
-   git push production main
-   heroku open --remote production
-   # Verify in production
+   # Promote staging to production via CLI
+   heroku pipelines:promote --app asset-mgmt-staging
+
+   # OR promote via Heroku Dashboard:
+   # 1. Go to https://dashboard.heroku.com/pipelines/foundation-asset-management
+   # 2. Click "Promote to production" button on staging app
    ```
+
+   ```bash
+   # Monitor production deployment
+   heroku logs --tail --app asset-mgmt-production
+
+   # Verify in production
+   heroku open --app asset-mgmt-production
+   ```
+
+### Alternative: Manual Git Deployment (Not Recommended)
+
+If you need to deploy manually (bypassing GitHub):
+
+```bash
+# Deploy to staging
+git push staging main
+
+# Deploy to production
+git push production main
+```
+
+**Note**: Manual deployments bypass the pipeline workflow and may cause drift between environments.
 
 ### Rollback Procedure
 

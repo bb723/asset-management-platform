@@ -10,7 +10,12 @@
       "Bash(fi)",
       "Bash(git add:*)",
       "Bash(git check-ignore:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git log:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(heroku logs:*)",
+      "Bash(heroku run:*)"
     ],
     "deny": [],
     "ask": []

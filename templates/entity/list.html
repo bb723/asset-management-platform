@@ -9,45 +9,322 @@
         <p class="text-muted">Manage property management entities and their buildings</p>
     </div>
     <div class="col-auto">
-        <a href="{{ url_for('create_entity') }}" class="btn btn-primary">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createEntityModal">
             <i class="bi bi-plus-circle"></i> New Entity
-        </a>
+        </button>
     </div>
 </div>
 
-{% if entities %}
-<div class="row">
-    {% for entity in entities %}
-    <div class="col-md-6 col-lg-4 mb-4">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <h5 class="card-title">
-                    <a href="{{ url_for('view_entity', entity_id=entity.entity_id) }}" class="text-decoration-none">
-                        {{ entity.name }}
-                    </a>
-                </h5>
-                <p class="card-text text-muted">{{ entity.description or 'No description' }}</p>
-            </div>
-            <div class="card-footer bg-white">
-                <div class="btn-group w-100" role="group">
-                    <a href="{{ url_for('view_entity', entity_id=entity.entity_id) }}" class="btn btn-sm btn-outline-primary">
-                        <i class="bi bi-eye"></i> View
-                    </a>
-                    <a href="{{ url_for('edit_entity', entity_id=entity.entity_id) }}" class="btn btn-sm btn-outline-secondary">
-                        <i class="bi bi-pencil"></i> Edit
-                    </a>
-                    <a href="{{ url_for('entity_budget', entity_id=entity.entity_id) }}" class="btn btn-sm btn-outline-success">
-                        <i class="bi bi-currency-dollar"></i> Budget
-                    </a>
+<div class="row" id="entitiesContainer">
+    {% if entities %}
+        {% for entity in entities %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <a href="{{ url_for('view_entity', entity_id=entity.entity_id) }}" class="text-decoration-none">
+                            {{ entity.name }}
+                        </a>
+                    </h5>
+                    <p class="card-text text-muted">{{ entity.description or 'No description' }}</p>
+                </div>
+                <div class="card-footer bg-white">
+                    <div class="btn-group w-100" role="group">
+                        <a href="{{ url_for('view_entity', entity_id=entity.entity_id) }}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-eye"></i> View
+                        </a>
+                        <a href="{{ url_for('edit_entity', entity_id=entity.entity_id) }}" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-pencil"></i> Edit
+                        </a>
+                        <a href="{{ url_for('entity_budget', entity_id=entity.entity_id) }}" class="btn btn-sm btn-outline-success">
+                            <i class="bi bi-currency-dollar"></i> Budget
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> No entities found. <button type="button" class="btn btn-link p-0" data-bs-toggle="modal" data-bs-target="#createEntityModal">Create your first entity</button>.
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Create Entity Modal -->
+<div class="modal fade" id="createEntityModal" tabindex="-1" aria-labelledby="createEntityModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="createEntityModalLabel">
+                    <i class="bi bi-plus-circle"></i> Create New Entity
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createEntityForm">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Entity Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="name" name="name" required maxlength="255">
+                        <div class="form-text">The name of the property management entity</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="4"></textarea>
+                        <div class="form-text">Optional description of the entity</div>
+                    </div>
+                </form>
+                <div id="formError" class="alert alert-danger d-none" role="alert"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-primary" id="createEntityBtn">
+                    <span class="btn-text">
+                        <i class="bi bi-check-circle"></i> Create Entity
+                    </span>
+                    <span class="btn-spinner d-none">
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        Creating...
+                    </span>
+                </button>
+            </div>
+        </div>
     </div>
-    {% endfor %}
 </div>
-{% else %}
-<div class="alert alert-info">
-    <i class="bi bi-info-circle"></i> No entities found. <a href="{{ url_for('create_entity') }}">Create your first entity</a>.
-</div>
-{% endif %}
+
+<style>
+.entity-card-pending {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.entity-card-pending .card {
+    background-color: #f8f9fa;
+    border: 2px dashed #dee2e6;
+}
+
+.entity-card-pending .card-title a {
+    color: #6c757d !important;
+}
+
+.entity-card-pending .btn {
+    opacity: 0.5;
+}
+
+.entity-card-pending::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 30px;
+    height: 30px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #0d6efd;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const createEntityBtn = document.getElementById('createEntityBtn');
+    const createEntityForm = document.getElementById('createEntityForm');
+    const modal = document.getElementById('createEntityModal');
+    const bsModal = new bootstrap.Modal(modal);
+    const entitiesContainer = document.getElementById('entitiesContainer');
+    const formError = document.getElementById('formError');
+
+    createEntityBtn.addEventListener('click', async function() {
+        const nameInput = document.getElementById('name');
+        const descriptionInput = document.getElementById('description');
+        const name = nameInput.value.trim();
+        const description = descriptionInput.value.trim();
+
+        // Validate
+        if (!name) {
+            showError('Entity name is required');
+            return;
+        }
+
+        // Hide error if shown
+        formError.classList.add('d-none');
+
+        // Show loading state
+        createEntityBtn.disabled = true;
+        createEntityBtn.querySelector('.btn-text').classList.add('d-none');
+        createEntityBtn.querySelector('.btn-spinner').classList.remove('d-none');
+
+        // Generate temporary ID for optimistic UI
+        const tempId = 'temp-' + Date.now();
+
+        // Add pending entity card immediately (optimistic UI)
+        addPendingEntity(tempId, name, description);
+
+        // Close modal
+        bsModal.hide();
+
+        // Reset form
+        createEntityForm.reset();
+
+        try {
+            // Make AJAX request
+            const response = await fetch('{{ url_for("create_entity") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: new URLSearchParams({
+                    name: name,
+                    description: description
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Update the pending card with real data
+                updatePendingEntity(tempId, data.entity);
+            } else {
+                // Remove pending card and show error
+                removePendingEntity(tempId);
+                showError(data.error || 'Failed to create entity');
+            }
+        } catch (error) {
+            console.error('Error creating entity:', error);
+            removePendingEntity(tempId);
+            showError('Failed to create entity. Please try again.');
+        } finally {
+            // Reset button state
+            createEntityBtn.disabled = false;
+            createEntityBtn.querySelector('.btn-text').classList.remove('d-none');
+            createEntityBtn.querySelector('.btn-spinner').classList.add('d-none');
+        }
+    });
+
+    function addPendingEntity(tempId, name, description) {
+        // Remove "no entities" message if present
+        const alertInfo = entitiesContainer.querySelector('.alert-info');
+        if (alertInfo) {
+            alertInfo.remove();
+        }
+
+        const card = document.createElement('div');
+        card.className = 'col-md-6 col-lg-4 mb-4 entity-card-pending';
+        card.id = tempId;
+        card.innerHTML = `
+            <div class="card shadow-sm h-100 position-relative">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <a href="#" class="text-decoration-none">
+                            ${escapeHtml(name)}
+                        </a>
+                    </h5>
+                    <p class="card-text text-muted">${escapeHtml(description) || 'No description'}</p>
+                </div>
+                <div class="card-footer bg-white">
+                    <div class="btn-group w-100" role="group">
+                        <button class="btn btn-sm btn-outline-primary" disabled>
+                            <i class="bi bi-eye"></i> View
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary" disabled>
+                            <i class="bi bi-pencil"></i> Edit
+                        </button>
+                        <button class="btn btn-sm btn-outline-success" disabled>
+                            <i class="bi bi-currency-dollar"></i> Budget
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        entitiesContainer.insertBefore(card, entitiesContainer.firstChild);
+    }
+
+    function updatePendingEntity(tempId, entity) {
+        const pendingCard = document.getElementById(tempId);
+        if (!pendingCard) return;
+
+        // Create the final active card
+        const card = document.createElement('div');
+        card.className = 'col-md-6 col-lg-4 mb-4';
+        card.innerHTML = `
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <a href="/entities/${entity.entity_id}" class="text-decoration-none">
+                            ${escapeHtml(entity.name)}
+                        </a>
+                    </h5>
+                    <p class="card-text text-muted">${escapeHtml(entity.description) || 'No description'}</p>
+                </div>
+                <div class="card-footer bg-white">
+                    <div class="btn-group w-100" role="group">
+                        <a href="/entities/${entity.entity_id}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-eye"></i> View
+                        </a>
+                        <a href="/entities/${entity.entity_id}/edit" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-pencil"></i> Edit
+                        </a>
+                        <a href="/entities/${entity.entity_id}/budget" class="btn btn-sm btn-outline-success">
+                            <i class="bi bi-currency-dollar"></i> Budget
+                        </a>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Replace pending card with active card
+        pendingCard.replaceWith(card);
+
+        // Add success flash animation
+        card.style.animation = 'fadeIn 0.3s ease-in';
+    }
+
+    function removePendingEntity(tempId) {
+        const pendingCard = document.getElementById(tempId);
+        if (pendingCard) {
+            pendingCard.remove();
+        }
+
+        // Show "no entities" message if container is empty
+        if (entitiesContainer.children.length === 0) {
+            entitiesContainer.innerHTML = `
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> No entities found. <button type="button" class="btn btn-link p-0" data-bs-toggle="modal" data-bs-target="#createEntityModal">Create your first entity</button>.
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    function showError(message) {
+        formError.textContent = message;
+        formError.classList.remove('d-none');
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Reset form and error when modal is closed
+    modal.addEventListener('hidden.bs.modal', function() {
+        createEntityForm.reset();
+        formError.classList.add('d-none');
+    });
+});
+</script>
 {% endblock %}

@@ -260,9 +260,42 @@ To test the application locally:
 
 ## Deployment
 
+### Quick Deploy Workflow
+
+**Heroku Pipeline**: `foundation-asset-management` (connected to GitHub `bb723/asset-management-platform`)
+
+1. **Push to GitHub** (triggers automatic staging deployment)
+   ```bash
+   git add .
+   git commit -m "Description of changes"
+   git push origin main
+   ```
+
+2. **Test on staging**
+   ```bash
+   heroku open --app asset-mgmt-staging
+   heroku logs --tail --app asset-mgmt-staging
+   ```
+
+3. **Promote to production** (after thorough testing)
+   ```bash
+   heroku pipelines:promote --app asset-mgmt-staging
+   heroku open --app asset-mgmt-production
+   ```
+
+### Applications
+
+- **Staging**: `asset-mgmt-staging` (auto-deploys from GitHub main branch)
+  - URL: https://asset-mgmt-staging.herokuapp.com
+  - Purpose: Testing and validation before production
+
+- **Production**: `asset-mgmt-production` (promoted from staging)
+  - URL: https://asset-mgmt-production.herokuapp.com
+  - Purpose: Live production environment
+
 See [DEPLOYMENT.md](DEPLOYMENT.md) for complete deployment instructions including:
 - Git setup
-- Heroku configuration
+- Heroku pipeline configuration
 - Environment variables
 - Database initialization
 - Azure app registration updates
@@ -295,12 +328,36 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) for complete deployment instructions includin
 
 This is an internal Standard Management Company application. For changes or improvements:
 
-1. Create a feature branch
-2. Make changes
-3. Test thoroughly
-4. Deploy to staging
-5. Test on staging
-6. Deploy to production
+1. **Create a feature branch** (optional for larger features)
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+
+2. **Make changes and test locally**
+   ```bash
+   python app.py
+   # Test at http://localhost:5000
+   ```
+
+3. **Commit and push to GitHub**
+   ```bash
+   git add .
+   git commit -m "Add feature: description"
+   git push origin main  # or merge feature branch to main
+   ```
+
+4. **Automatic deployment to staging**
+   - Heroku automatically deploys when you push to GitHub main branch
+
+5. **Test thoroughly on staging**
+   ```bash
+   heroku open --app asset-mgmt-staging
+   ```
+
+6. **Promote to production** (after validation)
+   ```bash
+   heroku pipelines:promote --app asset-mgmt-staging
+   ```
 
 ## License
 
