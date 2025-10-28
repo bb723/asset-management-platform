@@ -44,8 +44,8 @@
 - ❌ `.env` - **LOCAL ENVIRONMENT FILE WITH REAL CREDENTIALS**
 
 **Contains**:
-- Snowflake password: `your-snowflake-password`
-- Microsoft client secret: `your-azure-client-secret`
+- Snowflake password
+- Microsoft client secret
 - Flask secret keys
 - Database connection strings
 
