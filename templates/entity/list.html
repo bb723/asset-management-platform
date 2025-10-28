@@ -141,7 +141,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const createEntityBtn = document.getElementById('createEntityBtn');
     const createEntityForm = document.getElementById('createEntityForm');
     const modal = document.getElementById('createEntityModal');
-    const bsModal = new bootstrap.Modal(modal);
     const entitiesContainer = document.getElementById('entitiesContainer');
     const formError = document.getElementById('formError');
 
@@ -172,7 +171,10 @@ document.addEventListener('DOMContentLoaded', function() {
         addPendingEntity(tempId, name, description);
 
         // Close modal
-        bsModal.hide();
+        const modalInstance = bootstrap.Modal.getInstance(modal);
+        if (modalInstance) {
+            modalInstance.hide();
+        }
 
         // Reset form
         createEntityForm.reset();
