@@ -2,6 +2,80 @@
 
 {% block title %}Entities - Asset Management Platform{% endblock %}
 
+{% block extra_css %}
+<style>
+.entity-card-pending {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.entity-card-pending .card {
+    background-color: #f8f9fa;
+    border: 2px dashed #dee2e6;
+}
+
+.entity-card-pending .card-title a {
+    color: #6c757d !important;
+}
+
+.entity-card-pending .btn {
+    opacity: 0.5;
+}
+
+.entity-card-pending::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 30px;
+    height: 30px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #0d6efd;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+.pagination-info {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.table-responsive {
+    overflow-x: auto;
+}
+
+.entity-table th {
+    white-space: nowrap;
+    background-color: #f8f9fa;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.entity-table td {
+    vertical-align: middle;
+}
+
+.search-box {
+    max-width: 300px;
+}
+
+.positive-value {
+    color: #198754;
+}
+
+.negative-value {
+    color: #dc3545;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row mb-4">
     <div class="col">
@@ -15,42 +89,132 @@
     </div>
 </div>
 
-<div class="row" id="entitiesContainer">
-    {% if entities %}
-        {% for entity in entities %}
-        <div class="col-md-6 col-lg-4 mb-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-body">
-                    <h5 class="card-title">
-                        <a href="{{ url_for('view_entity', entity_id=entity.entity_id) }}" class="text-decoration-none">
-                            {{ entity.name }}
-                        </a>
-                    </h5>
-                    <p class="card-text text-muted">{{ entity.description or 'No description' }}</p>
-                </div>
-                <div class="card-footer bg-white">
-                    <div class="btn-group w-100" role="group">
-                        <a href="{{ url_for('view_entity', entity_id=entity.entity_id) }}" class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-eye"></i> View
-                        </a>
-                        <a href="{{ url_for('edit_entity', entity_id=entity.entity_id) }}" class="btn btn-sm btn-outline-secondary">
-                            <i class="bi bi-pencil"></i> Edit
-                        </a>
-                        <a href="{{ url_for('entity_budget', entity_id=entity.entity_id) }}" class="btn btn-sm btn-outline-success">
-                            <i class="bi bi-currency-dollar"></i> Budget
-                        </a>
-                    </div>
-                </div>
-            </div>
+<!-- Search and Filters -->
+<div class="row mb-3">
+    <div class="col-md-6">
+        <div class="input-group search-box">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="text" class="form-control" id="searchInput" placeholder="Search entities...">
         </div>
-        {% endfor %}
-    {% else %}
-        <div class="col-12">
-            <div class="alert alert-info">
+    </div>
+    <div class="col-md-6 text-end">
+        <div class="pagination-info" id="paginationInfo">
+            Showing <span id="startIndex">0</span> - <span id="endIndex">0</span> of <span id="totalEntities">0</span> entities
+        </div>
+    </div>
+</div>
+
+<!-- Entities Table -->
+<div class="card shadow-sm" id="entitiesContainer">
+    <div class="card-body p-0">
+        {% if entities %}
+        <div class="table-responsive">
+            <table class="table table-hover entity-table mb-0">
+                <thead>
+                    <tr>
+                        <th>Entity Name</th>
+                        <th class="text-center">Buildings</th>
+                        <th class="text-end">Portfolio Value</th>
+                        <th class="text-end">Total Debt</th>
+                        <th class="text-end">Equity</th>
+                        <th class="text-end">Annual Cashflow</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="entitiesTableBody">
+                    {% for entity in entities %}
+                    {% set metrics = entity_metrics.get(entity.entity_id, {}) %}
+                    <tr class="entity-row" data-entity-name="{{ entity.name|lower }}" data-entity-description="{{ (entity.description or '')|lower }}">
+                        <td>
+                            <div>
+                                <a href="{{ url_for('view_entity', entity_id=entity.entity_id) }}" class="fw-semibold text-decoration-none">
+                                    {{ entity.name }}
+                                </a>
+                                {% if entity.description %}
+                                <div class="text-muted small">{{ entity.description }}</div>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-secondary">{{ metrics.get('building_count', 0) }}</span>
+                        </td>
+                        <td class="text-end">
+                            {% set value = metrics.get('total_value', 0) %}
+                            {% if value > 0 %}
+                                <span class="fw-semibold">${{ "{:,.0f}".format(value) }}</span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            {% set debt = metrics.get('total_debt', 0) %}
+                            {% if debt > 0 %}
+                                <span class="text-danger">${{ "{:,.0f}".format(debt) }}</span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            {% set equity = metrics.get('total_equity', 0) %}
+                            {% if equity != 0 %}
+                                <span class="{{ 'positive-value' if equity > 0 else 'negative-value' }} fw-semibold">
+                                    ${{ "{:,.0f}".format(equity) }}
+                                </span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            {% set cashflow = metrics.get('annual_cashflow', 0) %}
+                            {% if cashflow != 0 %}
+                                <span class="{{ 'positive-value' if cashflow > 0 else 'negative-value' }} fw-semibold">
+                                    ${{ "{:,.0f}".format(cashflow) }}
+                                </span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="{{ url_for('view_entity', entity_id=entity.entity_id) }}"
+                                   class="btn btn-outline-primary"
+                                   title="View Details">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{{ url_for('edit_entity', entity_id=entity.entity_id) }}"
+                                   class="btn btn-outline-secondary"
+                                   title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{{ url_for('entity_budget', entity_id=entity.entity_id) }}"
+                                   class="btn btn-outline-success"
+                                   title="Budget">
+                                    <i class="bi bi-currency-dollar"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div class="card-footer bg-white">
+            <nav aria-label="Entity pagination">
+                <ul class="pagination pagination-sm mb-0 justify-content-center" id="paginationControls">
+                    <!-- Pagination will be generated by JavaScript -->
+                </ul>
+            </nav>
+        </div>
+        {% else %}
+        <div class="p-4">
+            <div class="alert alert-info mb-0">
                 <i class="bi bi-info-circle"></i> No entities found. <button type="button" class="btn btn-link p-0" data-bs-toggle="modal" data-bs-target="#createEntityModal">Create your first entity</button>.
             </div>
         </div>
-    {% endif %}
+        {% endif %}
+    </div>
 </div>
 
 <!-- Create Entity Modal -->
@@ -96,54 +260,126 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
-<style>
-.entity-card-pending {
-    opacity: 0.6;
-    pointer-events: none;
-}
-
-.entity-card-pending .card {
-    background-color: #f8f9fa;
-    border: 2px dashed #dee2e6;
-}
-
-.entity-card-pending .card-title a {
-    color: #6c757d !important;
-}
-
-.entity-card-pending .btn {
-    opacity: 0.5;
-}
-
-.entity-card-pending::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 30px;
-    height: 30px;
-    border: 3px solid #f3f3f3;
-    border-top: 3px solid #0d6efd;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    0% { transform: translate(-50%, -50%) rotate(0deg); }
-    100% { transform: translate(-50%, -50%) rotate(360deg); }
-}
-</style>
-
+{% block extra_js %}
 <script>
+// Pagination and Search
+let currentPage = 1;
+let rowsPerPage = 10;
+let filteredRows = [];
+
 document.addEventListener('DOMContentLoaded', function() {
     const createEntityBtn = document.getElementById('createEntityBtn');
     const createEntityForm = document.getElementById('createEntityForm');
     const modal = document.getElementById('createEntityModal');
-    const entitiesContainer = document.getElementById('entitiesContainer');
+    const searchInput = document.getElementById('searchInput');
+    const entitiesTableBody = document.getElementById('entitiesTableBody');
     const formError = document.getElementById('formError');
 
+    // Initialize pagination
+    filteredRows = Array.from(document.querySelectorAll('.entity-row'));
+    updatePagination();
+
+    // Search functionality
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase().trim();
+            const allRows = document.querySelectorAll('.entity-row');
+
+            filteredRows = Array.from(allRows).filter(row => {
+                const name = row.getAttribute('data-entity-name');
+                const description = row.getAttribute('data-entity-description');
+                return name.includes(searchTerm) || description.includes(searchTerm);
+            });
+
+            currentPage = 1;
+            updatePagination();
+        });
+    }
+
+    function updatePagination() {
+        const totalRows = filteredRows.length;
+        const totalPages = Math.ceil(totalRows / rowsPerPage);
+        const startIndex = (currentPage - 1) * rowsPerPage;
+        const endIndex = Math.min(startIndex + rowsPerPage, totalRows);
+
+        // Update info text
+        document.getElementById('totalEntities').textContent = totalRows;
+        document.getElementById('startIndex').textContent = totalRows > 0 ? startIndex + 1 : 0;
+        document.getElementById('endIndex').textContent = endIndex;
+
+        // Hide all rows first
+        const allRows = document.querySelectorAll('.entity-row');
+        allRows.forEach(row => row.style.display = 'none');
+
+        // Show only filtered and paginated rows
+        for (let i = startIndex; i < endIndex; i++) {
+            filteredRows[i].style.display = '';
+        }
+
+        // Update pagination controls
+        updatePaginationControls(totalPages);
+    }
+
+    function updatePaginationControls(totalPages) {
+        const paginationControls = document.getElementById('paginationControls');
+        if (!paginationControls) return;
+
+        paginationControls.innerHTML = '';
+
+        if (totalPages <= 1) return;
+
+        // Previous button
+        const prevLi = document.createElement('li');
+        prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+        prevLi.innerHTML = `<a class="page-link" href="#" aria-label="Previous"><span aria-hidden="true">&laquo;</span></a>`;
+        if (currentPage > 1) {
+            prevLi.querySelector('a').addEventListener('click', (e) => {
+                e.preventDefault();
+                currentPage--;
+                updatePagination();
+            });
+        }
+        paginationControls.appendChild(prevLi);
+
+        // Page numbers (show max 5 pages at a time)
+        const maxPagesToShow = 5;
+        let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+        let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+
+        if (endPage - startPage < maxPagesToShow - 1) {
+            startPage = Math.max(1, endPage - maxPagesToShow + 1);
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            const pageLi = document.createElement('li');
+            pageLi.className = `page-item ${i === currentPage ? 'active' : ''}`;
+            pageLi.innerHTML = `<a class="page-link" href="#">${i}</a>`;
+            const pageNum = i;
+            pageLi.querySelector('a').addEventListener('click', (e) => {
+                e.preventDefault();
+                currentPage = pageNum;
+                updatePagination();
+            });
+            paginationControls.appendChild(pageLi);
+        }
+
+        // Next button
+        const nextLi = document.createElement('li');
+        nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+        nextLi.innerHTML = `<a class="page-link" href="#" aria-label="Next"><span aria-hidden="true">&raquo;</span></a>`;
+        if (currentPage < totalPages) {
+            nextLi.querySelector('a').addEventListener('click', (e) => {
+                e.preventDefault();
+                currentPage++;
+                updatePagination();
+            });
+        }
+        paginationControls.appendChild(nextLi);
+    }
+
+    // Create entity functionality
     createEntityBtn.addEventListener('click', async function() {
         const nameInput = document.getElementById('name');
         const descriptionInput = document.getElementById('description');
@@ -163,12 +399,6 @@ document.addEventListener('DOMContentLoaded', function() {
         createEntityBtn.disabled = true;
         createEntityBtn.querySelector('.btn-text').classList.add('d-none');
         createEntityBtn.querySelector('.btn-spinner').classList.remove('d-none');
-
-        // Generate temporary ID for optimistic UI
-        const tempId = 'temp-' + Date.now();
-
-        // Add pending entity card immediately (optimistic UI)
-        addPendingEntity(tempId, name, description);
 
         // Close modal
         const modalInstance = bootstrap.Modal.getInstance(modal);
@@ -196,16 +426,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
 
             if (data.success) {
-                // Update the pending card with real data
-                updatePendingEntity(tempId, data.entity);
+                // Reload the page to show the new entity with metrics
+                window.location.reload();
             } else {
-                // Remove pending card and show error
-                removePendingEntity(tempId);
                 showError(data.error || 'Failed to create entity');
             }
         } catch (error) {
             console.error('Error creating entity:', error);
-            removePendingEntity(tempId);
             showError('Failed to create entity. Please try again.');
         } finally {
             // Reset button state
@@ -215,111 +442,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    function addPendingEntity(tempId, name, description) {
-        // Remove "no entities" message if present
-        const alertInfo = entitiesContainer.querySelector('.alert-info');
-        if (alertInfo) {
-            alertInfo.remove();
-        }
-
-        const card = document.createElement('div');
-        card.className = 'col-md-6 col-lg-4 mb-4 entity-card-pending';
-        card.id = tempId;
-        card.innerHTML = `
-            <div class="card shadow-sm h-100 position-relative">
-                <div class="card-body">
-                    <h5 class="card-title">
-                        <a href="#" class="text-decoration-none">
-                            ${escapeHtml(name)}
-                        </a>
-                    </h5>
-                    <p class="card-text text-muted">${escapeHtml(description) || 'No description'}</p>
-                </div>
-                <div class="card-footer bg-white">
-                    <div class="btn-group w-100" role="group">
-                        <button class="btn btn-sm btn-outline-primary" disabled>
-                            <i class="bi bi-eye"></i> View
-                        </button>
-                        <button class="btn btn-sm btn-outline-secondary" disabled>
-                            <i class="bi bi-pencil"></i> Edit
-                        </button>
-                        <button class="btn btn-sm btn-outline-success" disabled>
-                            <i class="bi bi-currency-dollar"></i> Budget
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-        entitiesContainer.insertBefore(card, entitiesContainer.firstChild);
-    }
-
-    function updatePendingEntity(tempId, entity) {
-        const pendingCard = document.getElementById(tempId);
-        if (!pendingCard) return;
-
-        // Create the final active card
-        const card = document.createElement('div');
-        card.className = 'col-md-6 col-lg-4 mb-4';
-        card.innerHTML = `
-            <div class="card shadow-sm h-100">
-                <div class="card-body">
-                    <h5 class="card-title">
-                        <a href="/entities/${entity.entity_id}" class="text-decoration-none">
-                            ${escapeHtml(entity.name)}
-                        </a>
-                    </h5>
-                    <p class="card-text text-muted">${escapeHtml(entity.description) || 'No description'}</p>
-                </div>
-                <div class="card-footer bg-white">
-                    <div class="btn-group w-100" role="group">
-                        <a href="/entities/${entity.entity_id}" class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-eye"></i> View
-                        </a>
-                        <a href="/entities/${entity.entity_id}/edit" class="btn btn-sm btn-outline-secondary">
-                            <i class="bi bi-pencil"></i> Edit
-                        </a>
-                        <a href="/entities/${entity.entity_id}/budget" class="btn btn-sm btn-outline-success">
-                            <i class="bi bi-currency-dollar"></i> Budget
-                        </a>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        // Replace pending card with active card
-        pendingCard.replaceWith(card);
-
-        // Add success flash animation
-        card.style.animation = 'fadeIn 0.3s ease-in';
-    }
-
-    function removePendingEntity(tempId) {
-        const pendingCard = document.getElementById(tempId);
-        if (pendingCard) {
-            pendingCard.remove();
-        }
-
-        // Show "no entities" message if container is empty
-        if (entitiesContainer.children.length === 0) {
-            entitiesContainer.innerHTML = `
-                <div class="col-12">
-                    <div class="alert alert-info">
-                        <i class="bi bi-info-circle"></i> No entities found. <button type="button" class="btn btn-link p-0" data-bs-toggle="modal" data-bs-target="#createEntityModal">Create your first entity</button>.
-                    </div>
-                </div>
-            `;
-        }
-    }
-
     function showError(message) {
         formError.textContent = message;
         formError.classList.remove('d-none');
-    }
-
-    function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
     }
 
     // Reset form and error when modal is closed

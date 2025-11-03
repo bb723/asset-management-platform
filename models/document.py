@@ -1,7 +1,7 @@
 """Document data model"""
 from dataclasses import dataclass
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, date
 
 
 @dataclass
@@ -15,18 +15,31 @@ class Document:
     file_size: int
     uploaded_by: str
     uploaded_at: Optional[datetime] = None
+    effective_date: Optional[date] = None
+    end_date: Optional[date] = None
 
     # Standard document categories
     CATEGORIES = [
-        'Insurance Binders',
-        'Loan Documents',
-        'Management Agreements',
+        'Insurance Policy',
+        'Settlement Statement',
+        'Fuel Contract',
+        'Property Management Agreement',
+        'Loan Agreement',
         'HVAC Service Contracts',
         'Lawn Care & Plowing Contracts',
         'Tax Bills',
         'Water/Sewer Bills',
         'Electric Bills',
         'Other'
+    ]
+
+    # Required documents that should always show (even if not uploaded)
+    REQUIRED_DOCUMENTS = [
+        'Insurance Policy',
+        'Settlement Statement',
+        'Fuel Contract',
+        'Property Management Agreement',
+        'Loan Agreement'
     ]
 
     @classmethod
@@ -40,7 +53,9 @@ class Document:
             file_path=data.get('FILE_PATH') or data.get('file_path'),
             file_size=data.get('FILE_SIZE') or data.get('file_size') or 0,
             uploaded_by=data.get('UPLOADED_BY') or data.get('uploaded_by'),
-            uploaded_at=data.get('UPLOADED_AT') or data.get('uploaded_at')
+            uploaded_at=data.get('UPLOADED_AT') or data.get('uploaded_at'),
+            effective_date=data.get('EFFECTIVE_DATE') or data.get('effective_date'),
+            end_date=data.get('END_DATE') or data.get('end_date')
         )
 
     def to_dict(self) -> dict:

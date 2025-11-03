@@ -13,10 +13,10 @@
                 <p class="text-muted">Building: <strong>{{ building.name }}</strong></p>
 
                 <form method="POST" action="{{ url_for('upload_document', building_id=building.building_id) }}"
-                      enctype="multipart/form-data">
+                      enctype="multipart/form-data" id="uploadForm">
                     <div class="mb-3">
                         <label for="category" class="form-label">Category <span class="text-danger">*</span></label>
-                        <select class="form-select" id="category" name="category" required>
+                        <select class="form-select" id="category" name="category" required onchange="toggleDateFields()">
                             <option value="">Select a category...</option>
                             {% for cat in categories %}
                             <option value="{{ cat }}">{{ cat }}</option>
@@ -33,8 +33,28 @@
                         </div>
                     </div>
 
+                    <div id="dateFields" style="display: none;">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> Add effective and expiration dates to track contract periods and insurance coverage.
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="effective_date" class="form-label">Effective Date</label>
+                                <input type="date" class="form-control" id="effective_date" name="effective_date">
+                                <div class="form-text">When this document/contract starts</div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="end_date" class="form-label">End Date</label>
+                                <input type="date" class="form-control" id="end_date" name="end_date">
+                                <div class="form-text">When this document/contract expires</div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="d-flex justify-content-between">
-                        <a href="{{ url_for('view_documents', building_id=building.building_id) }}" class="btn btn-secondary">
+                        <a href="{{ url_for('view_budget', building_id=building.building_id, tab='documents') }}" class="btn btn-secondary">
                             <i class="bi bi-arrow-left"></i> Cancel
                         </a>
                         <button type="submit" class="btn btn-primary">
@@ -46,4 +66,43 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Categories that should show date fields
+const categoriesWithDates = [
+    'Insurance Policy',
+    'Fuel Contract',
+    'Property Management Agreement',
+    'HVAC Service Contracts',
+    'Lawn Care & Plowing Contracts'
+];
+
+function toggleDateFields() {
+    const category = document.getElementById('category').value;
+    const dateFields = document.getElementById('dateFields');
+
+    if (categoriesWithDates.includes(category)) {
+        dateFields.style.display = 'block';
+    } else {
+        dateFields.style.display = 'none';
+        // Clear date fields if hiding
+        document.getElementById('effective_date').value = '';
+        document.getElementById('end_date').value = '';
+    }
+}
+
+// Pre-select category if passed in URL (from "Upload" button click)
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const preselectedCategory = urlParams.get('category');
+
+    if (preselectedCategory) {
+        const categorySelect = document.getElementById('category');
+        categorySelect.value = preselectedCategory;
+        toggleDateFields();
+    }
+});
+</script>
 {% endblock %}
